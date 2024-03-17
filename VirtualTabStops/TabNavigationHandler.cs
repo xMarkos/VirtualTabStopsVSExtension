@@ -63,6 +63,8 @@ internal class TabNavigationHandler : CommandListener
                 VSConstants.VSStd2KCmdID.RIGHT_EXT => NavigationEvent.ExtendRight,
                 VSConstants.VSStd2KCmdID.BACKSPACE => NavigationEvent.Backspace,
                 VSConstants.VSStd2KCmdID.DELETE => NavigationEvent.Delete,
+                VSConstants.VSStd2KCmdID.LEFT_EXT_COL => NavigationEvent.ExtendColumnLeft,
+                VSConstants.VSStd2KCmdID.RIGHT_EXT_COL => NavigationEvent.ExtendColumnRight,
                 _ => default,
             };
         }
@@ -86,21 +88,30 @@ internal class TabNavigationHandler : CommandListener
         int nextTabColumn = 0;
         string buffer = null;
 
-        if (@event is NavigationEvent.Left or NavigationEvent.ExtendLeft or NavigationEvent.Backspace)
+        switch (@event)
         {
-            if (_viewAdapter.GetTextStream(caret.Line, nextTab.Left, caret.Line, caret.Column, out buffer) == VSConstants.S_OK)
-            {
-                currentTabSize = buffer.Reverse().TakeWhile(x => x == ' ').Count();
-                nextTabColumn = caret.Column - currentTabSize;
-            }
-        }
-        else if (@event is NavigationEvent.Right or NavigationEvent.ExtendRight or NavigationEvent.Delete)
-        {
-            if (_viewAdapter.GetTextStream(caret.Line, caret.Column, caret.Line, nextTab.Right, out buffer) == VSConstants.S_OK)
-            {
-                currentTabSize = buffer.TakeWhile(x => x == ' ').Count();
-                nextTabColumn = caret.Column + currentTabSize;
-            }
+            case NavigationEvent.Left:
+            case NavigationEvent.ExtendLeft:
+            case NavigationEvent.ExtendColumnLeft:
+            case NavigationEvent.Backspace:
+                if (_viewAdapter.GetTextStream(caret.Line, nextTab.Left, caret.Line, caret.Column, out buffer) == VSConstants.S_OK)
+                {
+                    currentTabSize = buffer.Reverse().TakeWhile(x => x == ' ').Count();
+                    nextTabColumn = caret.Column - currentTabSize;
+                }
+
+                break;
+            case NavigationEvent.Right:
+            case NavigationEvent.ExtendRight:
+            case NavigationEvent.ExtendColumnRight:
+            case NavigationEvent.Delete:
+                if (_viewAdapter.GetTextStream(caret.Line, caret.Column, caret.Line, nextTab.Right, out buffer) == VSConstants.S_OK)
+                {
+                    currentTabSize = buffer.TakeWhile(x => x == ' ').Count();
+                    nextTabColumn = caret.Column + currentTabSize;
+                }
+
+                break;
         }
 
         bool isVTab = buffer != null && (currentTabSize == buffer.Length || (atTabStop && currentTabSize > 1));
@@ -119,6 +130,8 @@ internal class TabNavigationHandler : CommandListener
                     break;
                 case NavigationEvent.ExtendLeft:
                 case NavigationEvent.ExtendRight:
+                case NavigationEvent.ExtendColumnLeft:
+                case NavigationEvent.ExtendColumnRight:
                     ExtendSelectionToTab();
                     break;
                 default:
@@ -174,6 +187,8 @@ internal class TabNavigationHandler : CommandListener
         Right,
         ExtendLeft,
         ExtendRight,
+        ExtendColumnLeft,
+        ExtendColumnRight,
         Backspace,
         Delete,
     }
