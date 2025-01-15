@@ -124,15 +124,18 @@ internal class TabNavigationHandler : CommandListener
                 case NavigationEvent.Right:
                     NavigateToTab();
                     break;
-                case NavigationEvent.Backspace:
-                case NavigationEvent.Delete:
-                    DeleteTab();
-                    break;
                 case NavigationEvent.ExtendLeft:
                 case NavigationEvent.ExtendRight:
                 case NavigationEvent.ExtendColumnLeft:
                 case NavigationEvent.ExtendColumnRight:
                     ExtendSelectionToTab();
+                    break;
+                case NavigationEvent.Backspace:
+                case NavigationEvent.Delete:
+                    if (_viewAdapter.GetSelection(out _, out _, out _, out _) == VSConstants.S_OK)
+                        return false;
+
+                    DeleteTab();
                     break;
                 default:
                     return false;
